@@ -233,6 +233,8 @@
     .toc ul li { margin-bottom: 6px; line-height: 1.4; }
     .toc ul a { font-weight: 500; font-size: 14px; color: var(--muted); }
 
+    .toc-toggle { display: none; }
+
     /* ---------- Разделы ---------- */
     .panel {
       background: var(--surface);
@@ -386,7 +388,63 @@
       .panel { padding: 40px 32px; }
     }
 
+    /* Мобильное оглавление: компактная плашка под шапкой, список выпадает поверх текста */
+    @media (max-width: 767px) {
+      :root { --header-h: 85px; --gutter: 32px; }
+      html { scroll-padding-top: calc(var(--header-h) + 72px); }
+      .layout { gap: 32px; }
+      .toc.is-enhanced {
+        position: sticky;
+        top: var(--header-h);
+        z-index: 40;
+        margin: 0 calc(-1 * var(--gutter));
+        padding: 0 var(--gutter);
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: rgba(250, 250, 248, 0.94);
+        backdrop-filter: saturate(1.4) blur(12px);
+        -webkit-backdrop-filter: saturate(1.4) blur(12px);
+      }
+      .toc.is-enhanced h2 { display: none; }
+      .toc-toggle:not([hidden]) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 52px;
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .toc-chevron { color: var(--accent); transition: transform 0.2s ease; }
+      .toc.is-open .toc-chevron { transform: rotate(180deg); }
+      .toc.is-enhanced ol {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: min(60vh, 440px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 20px var(--gutter) 24px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        box-shadow: 0 24px 40px -24px rgba(18, 31, 43, 0.25);
+      }
+      .toc.is-open ol { display: block; }
+    }
+
     @media (max-width: 640px) {
+      :root { --header-h: 69px; --gutter: 20px; }
       body { font-size: 16px; }
       .container { padding: 0 20px; }
       .header-inner { min-height: 68px; gap: 12px; }
@@ -441,7 +499,11 @@
   <div class="container layout">
     <nav class="toc" aria-label="Содержание раздела">
       <h2>Содержание</h2>
-      <ol>
+      <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc-list" hidden>
+        <span>Содержание</span>
+        <svg class="toc-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <ol id="toc-list">
         <li><a href="#general">Общая информация</a></li>
         <li>
           <a href="#houses">Дома в управлении</a>
@@ -721,5 +783,38 @@
       <a href="index.html">Вернуться на главную</a>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      var toc = document.querySelector('.toc');
+      var toggle = toc && toc.querySelector('.toc-toggle');
+      if (!toggle) return;
+
+      // Без JS оглавление остаётся обычным списком
+      toc.classList.add('is-enhanced');
+      toggle.hidden = false;
+
+      function setOpen(open) {
+        toc.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      }
+
+      toggle.addEventListener('click', function () {
+        setOpen(!toc.classList.contains('is-open'));
+      });
+      toc.addEventListener('click', function (e) {
+        if (e.target.closest('a')) setOpen(false);
+      });
+      document.addEventListener('click', function (e) {
+        if (!toc.contains(e.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && toc.classList.contains('is-open')) {
+          setOpen(false);
+          toggle.focus();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
